@@ -75,6 +75,8 @@ RUN mkdir /usr/share/doc/pgbouncer && \
     cp COPYRIGHT /usr/share/doc/apache-age && \
     rm -r /tmp/pgbouncer-${pgbouncer_release}
 
+# # TODO: Install postgrest extension
+
 # Clean up
 WORKDIR /
 RUN apt-get remove -y build-essential postgresql-server-dev-$postgresql_major && \
@@ -91,11 +93,13 @@ COPY docker-entrypoint-initdb.d/00-create-extension.sql /docker-entrypoint-initd
 # # Expose pgbouncer port
 # EXPOSE 6432
 
-# Copy the start script into the container
-COPY entrypoint.sh /usr/local/bin/
+# # Copy the start script into the container
+# COPY entrypoint.sh /usr/local/bin/
 
-# Ensure executable permissions for the script
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# # Ensure executable permissions for the script
+# RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Set the script as the command to run when the container starts
-CMD ["/usr/local/bin/entrypoint.sh"]
+# # Set the script as the command to run when the container starts
+# CMD ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["postgres", "-c", "shared_preload_libraries=vector,age"]
