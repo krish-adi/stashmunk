@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "server"
+version = "0.1.0"
+description = ""
+authors = ["Adithya Krishnan <krishsandeep@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.104.1"
+uvicorn = "^0.24.0.post1"
+psycopg = {extras = ["binary", "pool"], version = "^3.1.14"}
+unstructured = "^0.11.2"
+requests = "^2.31.0"
+aiohttp = "^3.9.1"
+python-dotenv = "^1.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.11.0"
+autopep8 = "^2.0.4"
+pytest = "^7.4.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
