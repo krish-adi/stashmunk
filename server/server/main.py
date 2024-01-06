@@ -1,8 +1,10 @@
 from fastapi import Request
 import json
 from server import app
+from server.routers.stashes import router as stashes_router
 
-# app.include_router(token_router)
+
+app.include_router(stashes_router)
 
 
 @app.get("/", tags=["health-check"],)
@@ -17,11 +19,11 @@ async def root(request: Request):
 
 @app.on_event("startup")
 async def startup_event():
-    print('Connecting to creds database...')
-    print('Connected to creds database...')
+    print('Starting up...')
+    print('Start up complete.')
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    print('Disconnecting from creds database...')
-    print('Disconnected from creds database...')
+    print('Shutting down...')
+    print('Shut down complete.')
