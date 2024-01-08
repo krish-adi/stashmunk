@@ -6,6 +6,7 @@ import inspect
 from dataclasses import asdict
 import json
 
+
 T = TypeVar('T', bound='Document')
 
 
@@ -62,9 +63,9 @@ class Document:
         # Node level map
         self._node_level_map = {}
         for node in self._node_list:
-            if node._level not in self._node_level_map:
-                self._node_level_map[node._level] = []
-            self._node_level_map[node._level].append(node)
+            if node.level not in self._node_level_map:
+                self._node_level_map[node.level] = []
+            self._node_level_map[node.level].append(node)
 
         self._node_level_max = max(self._node_level_map.keys())
 
@@ -72,8 +73,8 @@ class Document:
         _node_data_dump = [asdict(_n) for _n in self._node_list]
         _dict = {
             'id': self.id,
-            'metadata': self.metadata,
             'source_type': self.source_type,
+            'metadata': self.metadata,
             # 'node_factory': self.node_factory,
             'node_data': _node_data_dump
         }
@@ -114,7 +115,8 @@ class Document:
             if _d.parent is not None:
                 for _p in self._node_list:
                     if _p.id == _d.parent:
-                        _p.children.append(_d.id)
+                        if _d.id not in _p.children:
+                            _p.children.append(_d.id)
 
     def _set_node_levels(self):
         # Create a dictionary to map node ids to node objects
@@ -124,7 +126,7 @@ class Document:
 
         # Define a recursive function to set the level of a node and its children
         def set_level(node: Node, level):
-            node._level = level
+            node.level = level
             for child_id in node.children:
                 set_level(node_dict[child_id], level + 1)
 
