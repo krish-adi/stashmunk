@@ -11,7 +11,7 @@ stashgres:
 
 .PHONY: build
 build:
-	docker build -t stashgres:0 /stashgres
+	docker build -t stashgres:0 ./stashgres
 
 .PHONY: postgres
 postgres:
