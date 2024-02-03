@@ -19,6 +19,7 @@ async def create_stash(name: str = 'my_stash_one'):
             _new_stash_id = str(_new_stash['id']).replace('-', '_')
 
             # TODO: add a trigger to update the updated_at in stashes
+            # TODO: create a stored function on trigger
             _query_2 = f"""
             CREATE TABLE documents_{_new_stash_id} (
                 id UUID NOT NULL PRIMARY KEY,   
@@ -26,7 +27,7 @@ async def create_stash(name: str = 'my_stash_one'):
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
-            """
+            """            
             _query_3 = f"""
             CREATE TABLE nodes_{_new_stash_id} (
                 id UUID NOT NULL PRIMARY KEY,

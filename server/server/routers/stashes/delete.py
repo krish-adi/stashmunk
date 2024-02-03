@@ -28,11 +28,17 @@ async def delete_stash(name: str = 'my_stash_one'):
             await acur.execute(_query_2, _values_2)
 
             _del_stash_id = str(_del_stash['id']).replace('-', '_')
-            _query_3 = f"DROP TABLE knowledge_{_del_stash_id};"
+            # TODO: create a stored function on trigger
+            _query_3 = f"DROP TABLE documents_{_del_stash_id};"
+            _query_3_N = f"DROP TABLE nodes_{_del_stash_id};"
+            _query_3_I = f"DROP TABLE images_{_del_stash_id};"
+            _query_3_A = f"DROP TABLE audio_{_del_stash_id};"
             _query_4 = f"DROP TABLE filestore_{_del_stash_id};"
-            # TODO: check if the table is created
+            # TODO: check if the following tables are dropped            
             await acur.execute(_query_3)
-            # TODO: check if the table is created
+            await acur.execute(_query_3_N)
+            await acur.execute(_query_3_I)
+            await acur.execute(_query_3_A)
             await acur.execute(_query_4)
 
             # Make the changes to the database persistent
