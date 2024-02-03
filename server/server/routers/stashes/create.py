@@ -46,17 +46,29 @@ async def create_stash(name: str = 'my_stash_one'):
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
             """
-            # Multimodal images nodes, references the node. If audio, node could have
-            # parent, children root, and the aduio_stasg will contain it's actual source
-            # in a bucket, this table could just have the embedding, bucket_link & metadata.
-            # _query_3_I = f"""
-            # CREATE TABLE images_{_new_stash_id} (
-            #     id UUID NOT NULL PRIMARY KEY REFERENCES nodes_{_new_stash_id}(id),
-            #     doc_id UUID REFERENCES documents_{_new_stash_id}(id),
-            #     ... filestore_id, embedding, metadata, etc
-            #     created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
-            # );
-            # """
+            # Multimodal nodes, references the node directly.
+            _query_3_I = f"""
+            CREATE TABLE images_{_new_stash_id} (
+                id UUID NOT NULL PRIMARY KEY REFERENCES nodes_{_new_stash_id}(id),
+                doc_id UUID REFERENCES documents_{_new_stash_id}(id),
+                filestore_id UUID REFERENCES filestore_{_new_stash_id}(id),
+                embedding vector(768),
+                metadata JSONB,
+                created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
+            );
+            """
+            # Audio node could have parent, children. This table will contain the audio chunk sources,
+            # and the audio chunk embeddings. While the informtion is in the nodes table.
+            _query_3_A = f"""
+            CREATE TABLE audio_{_new_stash_id} (
+                id UUID NOT NULL PRIMARY KEY REFERENCES nodes_{_new_stash_id}(id),
+                doc_id UUID REFERENCES documents_{_new_stash_id}(id),
+                filestore_id UUID REFERENCES filestore_{_new_stash_id}(id),
+                embedding vector(1536),
+                metadata JSONB,
+                created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
+            );
+            """
             # If id == doc_id then it is the complete file, if not then it points to a node
             _query_4 = f"""
             CREATE TABLE filestore_{_new_stash_id} (
@@ -70,11 +82,11 @@ async def create_stash(name: str = 'my_stash_one'):
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
             """
-            # TODO: check if the table is created
+            # TODO: check if the following tables are created
             await acur.execute(_query_2)
-            # TODO: check if the table is created
             await acur.execute(_query_3)
-            # TODO: check if the table is created
+            await acur.execute(_query_3_I)
+            await acur.execute(_query_3_A)
             await acur.execute(_query_4)
 
             # Make the changes to the database persistent

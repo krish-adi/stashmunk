@@ -1,6 +1,6 @@
 include ./.env
 
-# Usage: $ make {command}
+# Usage: >>> make {command}
 
 .ONESHELL:
 
