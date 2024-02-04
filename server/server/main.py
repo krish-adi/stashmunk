@@ -2,9 +2,11 @@ from fastapi import Request
 import json
 from server import app
 from server.routers.stashes import router as stashes_router
+from server.routers.knowledge import router as knowledge_router
 
 
 app.include_router(stashes_router)
+app.include_router(knowledge_router)
 
 
 @app.get("/", tags=["health-check"],)

@@ -27,7 +27,7 @@ async def create_stash(name: str = 'my_stash_one'):
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
-            """            
+            """
             _query_3 = f"""
             CREATE TABLE nodes_{_new_stash_id} (
                 id UUID NOT NULL PRIMARY KEY,
@@ -47,6 +47,24 @@ async def create_stash(name: str = 'my_stash_one'):
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
             """
+            # If id == doc_id then it is the complete file, if not then it points to a node
+            _query_4 = f"""
+            CREATE TABLE filestore_{_new_stash_id} (
+                id UUID NOT NULL PRIMARY KEY,
+                doc_id UUID,
+                filename TEXT,
+                filetype TEXT,
+                filesize_mb FLOAT,
+                bucket TEXT,
+                metadata JSONB,
+                created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
+            );
+            """
+            # TODO: check if the following tables are created
+            await acur.execute(_query_2)
+            await acur.execute(_query_3)
+            await acur.execute(_query_4)
+
             # Multimodal nodes, references the node directly.
             _query_3_I = f"""
             CREATE TABLE images_{_new_stash_id} (
@@ -70,25 +88,9 @@ async def create_stash(name: str = 'my_stash_one'):
                 created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
             );
             """
-            # If id == doc_id then it is the complete file, if not then it points to a node
-            _query_4 = f"""
-            CREATE TABLE filestore_{_new_stash_id} (
-                id UUID NOT NULL PRIMARY KEY,
-                doc_id UUID,
-                filename TEXT,
-                filetype TEXT,
-                filesize_mb FLOAT,
-                bucket TEXT,
-                metadata JSONB,
-                created_at TIMESTAMPTZ DEFAULT timezone ('utc', now()) NOT NULL
-            );
-            """
-            # TODO: check if the following tables are created
-            await acur.execute(_query_2)
-            await acur.execute(_query_3)
+
             await acur.execute(_query_3_I)
             await acur.execute(_query_3_A)
-            await acur.execute(_query_4)
 
             # Make the changes to the database persistent
             await aconn.commit()

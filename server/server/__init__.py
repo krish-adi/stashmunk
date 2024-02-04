@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,11 +16,11 @@ app.add_middleware(
 
 class StashgresClient:
     def __init__(self) -> None:
-        dbname = 'stashgres'
         user = 'postgres'
-        password = 'postgres'
-        port = '5454'
-        host = 'localhost'
+        password = os.environ.get('POSTGRES_PASSWORD')
+        host = os.environ.get('POSTGRES_HOST')
+        port = os.environ.get('POSTGRES_PORT')
+        dbname = 'stashgres'
 
         self.uri = f'postgres://{user}:{password}@{host}:{port}/{dbname}'
         self.kv = f'dbname={dbname} user={user} password={password} port={port} host={host}'
