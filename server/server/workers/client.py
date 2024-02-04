@@ -4,6 +4,7 @@ import asyncio
 import requests
 import websockets
 from websockets.client import WebSocketClientProtocol
+from fastapi import UploadFile
 from server.http_exceptions import BadRequestHttpException, ServerLimitHttpException
 
 
@@ -15,16 +16,34 @@ class WorkerClient:
             self._ssl = False
             self._route = f"parser"
 
-    async def run(self, client_id: str, stash_id: str) -> dict:
+    async def send_file(self, ws: WebSocketClientProtocol, file: UploadFile) -> dict:
+        await ws.send(json.dumps({
+            'file_name': file.filename,
+            'file_size': file.size,
+            'file_content_type': file.content_type,
+            'file_headers': file.headers.items(),
+        }))
+        await ws.send(file.file)
+        _r = await ws.recv()
+        _data = json.loads(_r)
+        if _data['status'] == 200:
+            print(_data['message'])
+
+    async def run(self, client_id: str, stash_id: str, file: UploadFile) -> dict:
         _ws_client_url = f"ws{'s' if self._ssl else ''}://{self._host}/{self._route}/{client_id}/{stash_id}"
         try:
             async with websockets.connect(_ws_client_url) as websocket:
-                headers_send = {"Some-Header": f"Header info goes here."}
-                await websocket.send(json.dumps(headers_send))
+                client_headers = {
+                    "Some-Header": f"Client deader info goes here."}
+                await websocket.send(json.dumps(client_headers))
+                _r_1 = await websocket.recv()
+                _data = json.loads(_r_1)
+                if _data['status'] == 200:
+                    print(_data['message'])
+                await self.send_file(websocket, file)
+
                 while True:
-                    print('Waiting for response.')
                     _r = await websocket.recv()
-                    print('Response received. Parsing.')
                     try:
                         _data = json.loads(_r)
                     except:
