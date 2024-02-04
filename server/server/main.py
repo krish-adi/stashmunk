@@ -1,9 +1,10 @@
-from fastapi import Request
 import json
 from server import app
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from server.http_exceptions import BadRequestHttpException, UnauthorizedHttpException, ServerLimitHttpException
 from server.routers.stashes import router as stashes_router
 from server.routers.knowledge import router as knowledge_router
-
 
 app.include_router(stashes_router)
 app.include_router(knowledge_router)
@@ -29,3 +30,27 @@ async def startup_event():
 async def shutdown_event():
     print('Shutting down...')
     print('Shut down complete.')
+
+
+@app.exception_handler(BadRequestHttpException)
+async def bad_request_http_exception_handler(request: Request, excep: BadRequestHttpException):
+    return JSONResponse(
+        status_code=excep.status_code,
+        content={"message": excep.message}
+    )
+
+
+@app.exception_handler(UnauthorizedHttpException)
+async def unauthorized_http_exception_handler(request: Request, excep: UnauthorizedHttpException):
+    return JSONResponse(
+        status_code=excep.status_code,
+        content={"message": excep.message}
+    )
+
+
+@app.exception_handler(ServerLimitHttpException)
+async def server_limit_http_exception_handler(request: Request, excep: ServerLimitHttpException):
+    return JSONResponse(
+        status_code=excep.status_code,
+        content={"message": excep.message}
+    )

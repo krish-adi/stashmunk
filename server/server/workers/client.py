@@ -3,8 +3,8 @@ import click
 import asyncio
 import requests
 import websockets
-
 from websockets.client import WebSocketClientProtocol
+from server.http_exceptions import BadRequestHttpException, ServerLimitHttpException
 
 
 class WorkerClient:
@@ -40,10 +40,10 @@ class WorkerClient:
                     # await websocket.close()
         except websockets.exceptions.ConnectionClosedError as e:
             print(e)
-            raise e
+            raise BadRequestHttpException
         except Exception as e:
             print(e)
-            raise e
+            raise ServerLimitHttpException
 
 
 parser_client = WorkerClient(name="parser")
