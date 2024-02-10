@@ -45,6 +45,7 @@ async def add_knowledge(file: UploadFile):
 
     #         # # insert the document
     #         # _ldoc: Document = Document.from_file('test_doc_dump.json')
+    #         # TODO: Status of each node, stash-documents-metadata- embedding model, llm model, image model, embed dim, and so on.
     #         # _query_1 = f"""
     #         # INSERT INTO documents_{_insert_stash_id} (id, source_type, metadata) VALUES (%s, %s, %s);
     #         # """
