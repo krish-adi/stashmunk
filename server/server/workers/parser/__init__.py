@@ -1,4 +1,5 @@
 import json
+import asyncio
 from tempfile import SpooledTemporaryFile
 from starlette.datastructures import Headers
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, UploadFile
@@ -9,7 +10,7 @@ router = APIRouter(
 )
 
 
-class ConnectionManager:
+class ParserManager:
     def __init__(self):
         self.client_connections: dict[str, WebSocket] = {}
         self.client_headers: dict[str, dict] = {}
@@ -41,37 +42,48 @@ class ConnectionManager:
             })
 
         except Exception as e:
-            await websocket.send_text('Unauthorized connection.')
+            await websocket.send_json({
+                "status": "400",
+                "message": "Bad request.",
+            })
             await websocket.close()
             raise WebSocketDisconnect
 
-    async def recieve_client_file(self, websocket: WebSocket):
-        while True:
-            _fileheaders_text = await websocket.receive_text()
-            _fileheaders: dict = json.loads(_fileheaders_text)
-            print(_fileheaders)
-            # Receive text or file (bytes)
-            max_file_size = 1024 * 1024
-            tempfile = SpooledTemporaryFile(max_size=max_file_size)
-            file = UploadFile(
-                file=tempfile,  # type: ignore[arg-type]
-                size=0,
-                filename=_fileheaders['file_name'],
-                headers=Headers(raw=[(str.encode(_h[0]), str.encode(_h[1]))
-                                for _h in _fileheaders['file_headers']]),
-            )
-            await file.write(await websocket.receive_bytes())
+    async def recieve_client_file(self, websocket: WebSocket, client_id: str):
+        _fileheaders_text = await websocket.receive_text()
+        _fileheaders: dict = json.loads(_fileheaders_text)
 
-            print(f"File received: {file.filename}")
-            print(f"File size: {file.size}")
-            print(f"File content type: {file.content_type}")
-            print(f"File headers: {file.headers.items()}")
+        # Receive text or file (bytes)
+        max_file_size = 1024 * 1024
+        tempfile = SpooledTemporaryFile(max_size=max_file_size)
+        file = UploadFile(
+            file=tempfile,  # type: ignore[arg-type]
+            size=0,
+            filename=_fileheaders['file_name'],
+            headers=Headers(raw=[(str.encode(_h[0]), str.encode(_h[1]))
+                            for _h in _fileheaders['file_headers']]),
+        )
+        await file.write(await websocket.receive_bytes())
 
-            # Send a confirmation or the file back
-            await websocket.send_json({
-                "status": "200",
-                "message": "file received successfully.",
-            })
+        print(f"File received: {file.filename}")
+        print(f"File size: {file.size}")
+        print(f"File content type: {file.content_type}")
+        print(f"File headers: {file.headers.items()}")
+
+        # Send a confirmation or the file back
+        await websocket.send_json({
+            "status": "200",
+            "message": "File received successfully.",
+        })
+
+    async def process_client_file(self, websocket: WebSocket, client_id: str):
+        print(f'Processing file. {client_id}')
+        await asyncio.sleep(2)
+        await websocket.send_json({
+            "status": "200",
+            "message": "File processed successfully.",
+        })
+        print(f'Processed file. {client_id}')
 
     async def send_client_message(self, client_id: str, message: dict):
         print('Sending message to client.')
@@ -87,7 +99,7 @@ class ConnectionManager:
         self.client_stahes.pop(client_id)
 
 
-connection_manager = ConnectionManager()
+parser_manager = ParserManager()
 
 
 @router.websocket("/{client_id}/{stash_id}")
@@ -98,15 +110,17 @@ async def parser_endpoint(
 ):
     try:
         query_params = websocket.query_params
-        await connection_manager.connect(websocket, client_id, stash_id)
-        await connection_manager.recieve_client_file(websocket)
-        await connection_manager.send_client_message(
-            client_id,
-            {
-                "message": "Hello, World!",
-            })
-        while True:
-            data = await websocket.receive_text()
-            print(f"Data received: {data}")
+        await parser_manager.connect(websocket, client_id, stash_id)
+        await parser_manager.recieve_client_file(websocket, client_id)
+        await parser_manager.process_client_file(websocket, client_id)
+        # await parser_manager.send_client_message(
+        #     client_id,
+        #     {
+        #         "message": "Hello, World!",
+        #     })
+        # while True:
+        #     data = await websocket.receive_text()
+        #     print(f"Data received: {data}")
+        parser_manager.disconnect(client_id)
     except WebSocketDisconnect:
-        connection_manager.disconnect(client_id)
+        parser_manager.disconnect(client_id)

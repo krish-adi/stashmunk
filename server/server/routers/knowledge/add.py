@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, UploadFile
 from server import stashgres_client
 from server.document import Document, Node
 from server.types.stash import Stash
-from server.workers.client import parser_client
+from server.workers.parser.client import parser_client
 import websockets
 
 router = APIRouter()
@@ -40,6 +40,9 @@ async def add_knowledge(file: UploadFile):
                 stash_id=_insert_stash_id,
                 file=file
             )
+
+            print({'client_id': _client_id, 'stash_id': _insert_stash_id,
+                  'parser_response': _parser_response})
 
             return {'client_id': _client_id, 'stash_id': _insert_stash_id, 'parser_response': _parser_response}
 
