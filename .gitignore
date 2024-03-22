@@ -1,6 +1,7 @@
 # Stashmunk
 refs/
 *.ipynb
+storage/
 
 # General
 .DS_Store
