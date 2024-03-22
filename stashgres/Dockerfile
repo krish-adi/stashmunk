@@ -102,4 +102,8 @@ COPY docker-entrypoint-initdb.d/00-create-extension.sql /docker-entrypoint-initd
 # # Set the script as the command to run when the container starts
 # CMD ["/usr/local/bin/entrypoint.sh"]
 
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_USER=stashgres
+ENV POSTGRES_DB=stashgres
+
 CMD ["postgres", "-c", "shared_preload_libraries=vector,age"]

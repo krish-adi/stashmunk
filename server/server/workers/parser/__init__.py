@@ -1,8 +1,15 @@
 import json
 import asyncio
+from io import BytesIO
 from tempfile import SpooledTemporaryFile
 from starlette.datastructures import Headers
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, UploadFile
+from server.api_clients.unstructuredio import UnstructuredIOClient
+from server.document import Document
+from server.document.node.factories import unstructuredio_node_factory
+from server.document.traversals import summarize_doc, embed_doc
+from server import stashgres_client
+from server.document.persist_stashgres import persist_to_stashgres
 
 router = APIRouter(
     prefix="/parser",
@@ -19,6 +26,8 @@ class ParserManager:
         # TODO: for file uploads to be handled.
         # Start a separate process to handle file parsing for each client.
         self.client_documents: dict[str, str] = {}
+
+        self.uns_api = UnstructuredIOClient()
 
     async def connect(self,
                       websocket: WebSocket,
@@ -56,14 +65,18 @@ class ParserManager:
         # Receive text or file (bytes)
         max_file_size = 1024 * 1024
         tempfile = SpooledTemporaryFile(max_size=max_file_size)
+        # tempfile.write(await websocket.receive_bytes())
+        bytes = await websocket.receive_bytes()
+        bytes_io = BytesIO(bytes)
         file = UploadFile(
-            file=tempfile,  # type: ignore[arg-type]
+            # file=tempfile,  # type: ignore[arg-type]
+            file=bytes_io,
             size=0,
             filename=_fileheaders['file_name'],
             headers=Headers(raw=[(str.encode(_h[0]), str.encode(_h[1]))
                             for _h in _fileheaders['file_headers']]),
         )
-        await file.write(await websocket.receive_bytes())
+        # await file.write(await websocket.receive_bytes())
 
         print(f"File received: {file.filename}")
         print(f"File size: {file.size}")
@@ -76,13 +89,32 @@ class ParserManager:
             "message": "File received successfully.",
         })
 
-    async def process_client_file(self, websocket: WebSocket, client_id: str):
+        return bytes
+
+    async def process_client_file(self, websocket: WebSocket, client_id: str, file: bytes):
         print(f'Processing file. {client_id}')
-        await asyncio.sleep(2)
-        await websocket.send_json({
+        _node_data = self.uns_api.request(
+            files={'files': ('test.pdf', file)})
+        _doc = Document(
+            node_data=_node_data,
+            node_factory=unstructuredio_node_factory,
+            source_type='pdf',
+            metadata={
+                'filename': 'test.pdf',
+            })
+        print('performing summarization')
+        await _doc.atraverse_and_apply(summarize_doc, direction='leaf', parallel=True)
+        print('performing embedding')
+        await _doc.atraverse_and_apply(embed_doc, direction='leaf', parallel=True)
+        print('persisting to stashgres')
+        with open('/Users/adithya/projects/stashmunk-org/stashmunk/storage/test.json', 'w') as f:
+            json.dump(_doc.dump(), f, indent=4)
+        await persist_to_stashgres(stashgres_client=stashgres_client, stash_name=self.client_stahes[client_id], document=_doc)
+        file_data = {
             "status": "200",
             "message": "File processed successfully.",
-        })
+        }
+        await websocket.send_json(file_data)
         print(f'Processed file. {client_id}')
 
     async def send_client_message(self, client_id: str, message: dict):
@@ -111,8 +143,8 @@ async def parser_endpoint(
     try:
         query_params = websocket.query_params
         await parser_manager.connect(websocket, client_id, stash_id)
-        await parser_manager.recieve_client_file(websocket, client_id)
-        await parser_manager.process_client_file(websocket, client_id)
+        file = await parser_manager.recieve_client_file(websocket, client_id)
+        await parser_manager.process_client_file(websocket, client_id, file=file)
         # await parser_manager.send_client_message(
         #     client_id,
         #     {

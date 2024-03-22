@@ -28,7 +28,7 @@ class WorkerClient:
             async with websockets.connect(_ws_client_url) as websocket:
                 # Step 01: Send client headers
                 client_headers = {
-                    "Some-Header": f"Client deader info goes here."}
+                    "Some-Header": f"Client header info goes here."}
                 await websocket.send(json.dumps(client_headers))
                 _data_1 = json.loads(await websocket.recv())
                 if int(_data_1['status']) == 200:
@@ -56,7 +56,7 @@ class WorkerClient:
                 _data_3 = json.loads(await websocket.recv())
                 if int(_data_3['status']) == 200:
                     print(_data_3['message'])
-                    return _data_3['message']
+                    return _data_3['data']
                 elif int(_data_3['status']) == 403:
                     print(_data_3['message'])
                     raise UnauthorizedHttpException

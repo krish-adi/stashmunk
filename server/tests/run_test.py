@@ -1,4 +1,5 @@
-from server.document import Document, Node
+from server.document import Document
+from server.document.node import Node
 import json
 
 with open('tests/test_node_data.json', 'r') as f:

@@ -1,2 +1,1 @@
-from server.document.document import Document
-from server.document.node import Node
+from server.document.base import Document

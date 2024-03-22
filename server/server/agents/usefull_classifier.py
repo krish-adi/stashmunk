@@ -5,7 +5,7 @@ env_vars = dotenv_values(".env")
 
 
 class UsefullClassificationAgent:
-    def __init__(self, model: str = 'gpt-3.5-turbo-1106'):
+    def __init__(self, model: str = 'gpt-3.5-turbo-0125'):
         self._model = model
 
     def _make_messages(self, input: str):

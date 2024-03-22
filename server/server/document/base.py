@@ -5,15 +5,7 @@ import asyncio
 import inspect
 from dataclasses import asdict
 import json
-
-
-def default_node_factory(node: dict, doc_id) -> Node:
-    _node_values = {k: v for k, v in node.items() if k in Node.__annotations__}
-
-    if "doc_id" not in _node_values:
-        _node_values["doc_id"] = doc_id
-
-    return Node(**_node_values)
+from server.document.node.factories import default_node_factory
 
 
 class Document:
@@ -22,7 +14,7 @@ class Document:
         id: str = None,
         node_list: List[Node] = None,
         node_data: List[dict] = None,
-        node_factory: Callable[[dict], Node] = default_node_factory,
+        node_factory: Callable[[dict, str], Node] = default_node_factory,
         source_type: str = None,
         metadata: dict = {},
     ) -> None:
@@ -32,7 +24,8 @@ class Document:
             self.id = str(uuid4())
 
         self.source_type: str = source_type  # source type: pdf, docx, html, url
-        # Status of each node, stash-documents-metadata- embedding model, llm model, image model, embed dim, and so on.
+        
+        # TODO: Status of each node, stash-documents-metadata- embedding model, llm model, image model, embed dim, and so on.
         self.metadata: dict = metadata  # source metadata type, url, author, permalink
         self.node_factory: str = node_factory.__name__
 
@@ -70,9 +63,9 @@ class Document:
 
         self._node_level_max = max(self._node_level_map.keys())
 
-    def to_file(self, filename: str) -> None:
+    def dump(self) -> None:
         _node_data_dump = [asdict(_n) for _n in self._node_list]
-        _dict = {
+        _dump = {
             "id": self.id,
             "source_type": self.source_type,
             "metadata": self.metadata,
@@ -80,8 +73,17 @@ class Document:
             "node_data": _node_data_dump,
         }
 
+        return _dump
+
+    def to_file(self, filename: str, indent_json: int = None) -> None:
+
+        _dict = self.dump()
+
         with open(filename, "w") as _f:
-            json.dump(_dict, _f)
+            if indent_json:
+                json.dump(_dict, _f, indent=indent_json)
+            else:
+                json.dump(_dict, _f)
 
         return _dict
 
@@ -153,7 +155,8 @@ class Document:
             )
             return _g
         else:
-            raise ValueError(f"Supported graph types: ['mermaid'], not {graph_type}")
+            raise ValueError(
+                f"Supported graph types: ['mermaid'], not {graph_type}")
 
     def _mermaid_graph(self, root: Node) -> str:
         visited = set()
@@ -173,7 +176,8 @@ class Document:
                         child_id_list.append(str(child_node.id))
                         queue.append(child_node)
                 if child_id_list:
-                    graph.append(f"{str(node.id)} --> {' & '.join(child_id_list)}")
+                    graph.append(
+                        f"{str(node.id)} --> {' & '.join(child_id_list)}")
 
         return "\n".join(graph)
 
@@ -209,7 +213,8 @@ class Document:
 
             for _level in _range:
                 asyncio.run(
-                    async_apply_helper(self._node_level_map[_level], self, func)
+                    async_apply_helper(
+                        self._node_level_map[_level], self, func)
                 )
 
         else:
@@ -225,7 +230,8 @@ class Document:
                     for child_id in node.children:
                         child_node = document.find_node(child_id)
                         if child_node is not None:
-                            traverse_and_apply_helper(document, child_node, func)
+                            traverse_and_apply_helper(
+                                document, child_node, func)
 
                 for root in root_nodes:
                     traverse_and_apply_helper(self, root, func)

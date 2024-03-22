@@ -2,7 +2,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-
+# TODO: Not used at the moment, refactor it into both server and workers
 class StashgresClient:
     def __init__(self) -> None:
         dbname = 'stashgres'

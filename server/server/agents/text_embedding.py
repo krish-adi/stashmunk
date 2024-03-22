@@ -6,7 +6,7 @@ env_vars = dotenv_values(".env")
 
 
 class TextEmbeddingAgent:
-    def __init__(self, model: str = 'text-embedding-ada-002'):
+    def __init__(self, model: str = 'text-embedding-3-small'):
         self._model = model
         self._dim = 1536
 
